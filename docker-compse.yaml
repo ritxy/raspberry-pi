@@ -1,0 +1,62 @@
+:q!version: '3.7'
+
+services:
+  wireguard:
+    image: linuxserver/wireguard
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - SERVERPORT=51820 #optional
+      - PEERS=2 #optional
+      - PEERDNS=auto #optional
+    volumes:
+      - /root/wireguard:/config
+      - /lib/modules:/lib/modules
+      - /usr/src:/usr/src
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1
+      - 8.8.8.8  
+    restart: unless-stopped
+
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:v5.7
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "80:80/tcp"
+      - "443:443/tcp"
+    environment:
+      TZ: 'Europe/London'
+      WEBPASSWORD: 'AS#$nD-s1?$%'
+    volumes:
+      - './etc-pihole/:/etc/pihole/'
+      - './etc-dnsmasq.d/:/etc/dnsmasq.d/'
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1
+      - 8.8.8.8  
+    networks:
+      containers:
+        ipv4_address: 192.168.0.12
+
+networks:
+  containers:
+    ipam:
+      config:
+        - subnet: 192.168.0.1/24
+          gateway: 192.168.0.1
